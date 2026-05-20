@@ -1,0 +1,1018 @@
+// ─────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────
+const APP = {
+  resume: { skills: [], experience: [], education: [], certifications: [], languages: [], achievements: [] },
+  jobs: [],
+  applications: [],
+  replies: [],
+  stats: {},
+  gmailConnected: false
+};
+
+// ─────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('user-menu-wrap');
+  if (wrap && !wrap.contains(e.target)) wrap.classList.remove('open');
+});
+
+window.addEventListener('load', async () => {
+  await loadResume();
+  await loadGmail();
+  await loadJobs();
+  await loadApplications();
+  await loadReplies();
+  await loadStats();
+  renderJobs();
+  renderApplications();
+  renderReplies();
+});
+
+// ─────────────────────────────────────────────────────────────────
+// TAB NAVIGATION
+// ─────────────────────────────────────────────────────────────────
+function switchTab(btn) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('pane-' + btn.dataset.tab).classList.add('active');
+}
+
+function switchTabByName(name) {
+  const btn = document.querySelector(`.nav-tab[data-tab="${name}"]`);
+  if (btn) switchTab(btn);
+}
+
+function toggleUserMenu() {
+  document.getElementById('user-menu-wrap').classList.toggle('open');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// MODAL HELPERS
+// ─────────────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ─────────────────────────────────────────────────────────────────
+// LOGGING
+// ─────────────────────────────────────────────────────────────────
+function log(msg, type = 'info') {
+  const box = document.getElementById('log');
+  if (!box) return;
+  const time = new Date().toTimeString().slice(0, 8);
+  const row = document.createElement('div');
+  row.className = 'log-row';
+  row.innerHTML = `<span class="log-ts">[${time}]</span><span class="log-${type}">${msg}</span>`;
+  box.appendChild(row);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// API HELPERS
+// ─────────────────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    ...opts
+  });
+  let data;
+  try {
+    data = await res.json();
+  } catch (e) {
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    return {};
+  }
+  if (!res.ok) {
+    // Surface the most informative error field we can find
+    const msg = data?.error?.message || data?.error || data?.message || `HTTP ${res.status}`;
+    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+  }
+  // Even on 200, Anthropic returns { type: 'error', error: {...} } sometimes
+  if (data?.type === 'error' || (data?.error && !data?.content)) {
+    const msg = data.error?.message || data.error || 'Anthropic API error';
+    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+  }
+  return data;
+}
+
+async function claude(system, user) {
+  const data = await api('/api/claude', {
+    method: 'POST',
+    body: JSON.stringify({ system, messages: [{ role: 'user', content: user }] })
+  });
+  if (!data?.content?.[0]?.text) {
+    throw new Error('Empty Claude response. Check ANTHROPIC_API_KEY in your .env file.');
+  }
+  return data.content[0].text;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// RESUME LOADING & RENDERING
+// ─────────────────────────────────────────────────────────────────
+async function loadResume() {
+  try {
+    const r = await api('/api/resume');
+    APP.resume = {
+      full_name: r.full_name || '',
+      title: r.title || '',
+      location: r.location || '',
+      phone: r.phone || '',
+      portfolio: r.portfolio || '',
+      linkedin: r.linkedin || '',
+      summary: r.summary || '',
+      skills: r.skills || [],
+      experience: r.experience || [],
+      education: r.education || [],
+      certifications: r.certifications || [],
+      languages: r.languages || [],
+      achievements: r.achievements || []
+    };
+    fillResumeForm();
+  } catch (e) {
+    console.error('loadResume', e);
+  }
+}
+
+function fillResumeForm() {
+  const r = APP.resume;
+  document.getElementById('r-name').value = r.full_name || '';
+  document.getElementById('r-title').value = r.title || '';
+  document.getElementById('r-location').value = r.location || '';
+  document.getElementById('r-phone').value = r.phone || '';
+  document.getElementById('r-portfolio').value = r.portfolio || '';
+  document.getElementById('r-linkedin').value = r.linkedin || '';
+  document.getElementById('r-summary').value = r.summary || '';
+  renderSkills();
+  renderExperience();
+  renderEducation();
+  renderCertifications();
+  renderLanguages();
+  renderAchievements();
+}
+
+function renderSkills() {
+  const wrap = document.getElementById('skills-wrap');
+  // keep the input, remove other children
+  const inp = document.getElementById('skill-input');
+  wrap.innerHTML = '';
+  APP.resume.skills.forEach((s, i) => {
+    const tag = document.createElement('span');
+    tag.className = 'skill-tag';
+    tag.innerHTML = `${s} <button onclick="removeSkill(${i})"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+    wrap.appendChild(tag);
+  });
+  wrap.appendChild(inp);
+}
+
+function addSkill() {
+  const inp = document.getElementById('skill-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  // split by comma in case user pastes multiple
+  val.split(',').forEach(s => {
+    const t = s.trim();
+    if (t && !APP.resume.skills.includes(t)) APP.resume.skills.push(t);
+  });
+  inp.value = '';
+  renderSkills();
+}
+
+function removeSkill(i) {
+  APP.resume.skills.splice(i, 1);
+  renderSkills();
+}
+
+function renderExperience() {
+  const list = document.getElementById('exp-list');
+  if (!APP.resume.experience.length) {
+    list.innerHTML = '<div class="text-muted text-sm" style="padding: 12px 0;">No work experience added yet. Click "Add Job" above.</div>';
+    return;
+  }
+  list.innerHTML = APP.resume.experience.map((exp, i) => `
+    <div class="exp-card">
+      <div class="form-grid">
+        <div class="field"><label>Job Title</label><input class="ctrl" value="${(exp.title||'').replace(/"/g,'&quot;')}" oninput="updExp(${i},'title',this.value)"></div>
+        <div class="field"><label>Company</label><input class="ctrl" value="${(exp.company||'').replace(/"/g,'&quot;')}" oninput="updExp(${i},'company',this.value)"></div>
+      </div>
+      <div class="form-grid cols-3">
+        <div class="field"><label>Location</label><input class="ctrl" value="${(exp.location||'').replace(/"/g,'&quot;')}" oninput="updExp(${i},'location',this.value)"></div>
+        <div class="field"><label>Start Date</label><input class="ctrl" value="${(exp.start||'').replace(/"/g,'&quot;')}" placeholder="Nov 2022" oninput="updExp(${i},'start',this.value)"></div>
+        <div class="field"><label>End Date</label><input class="ctrl" value="${(exp.end||'').replace(/"/g,'&quot;')}" placeholder="Present" oninput="updExp(${i},'end',this.value)"></div>
+      </div>
+      <div class="field"><label>Description (one bullet per line)</label>
+        <textarea class="ctrl" rows="4" oninput="updExp(${i},'desc',this.value)">${exp.desc || ''}</textarea>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="removeExp(${i})">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+        Remove
+      </button>
+    </div>
+  `).join('');
+}
+
+function addExperience() {
+  APP.resume.experience.push({ title: '', company: '', location: '', start: '', end: '', desc: '' });
+  renderExperience();
+}
+
+function updExp(i, key, val) { APP.resume.experience[i][key] = val; }
+function removeExp(i) { APP.resume.experience.splice(i, 1); renderExperience(); }
+
+function renderEducation() {
+  const list = document.getElementById('edu-list');
+  if (!APP.resume.education.length) {
+    list.innerHTML = '<div class="text-muted text-sm" style="padding: 8px 0;">No education added yet.</div>';
+    return;
+  }
+  list.innerHTML = APP.resume.education.map((e, i) => `
+    <div class="list-item">
+      <input value="${(e||'').replace(/"/g,'&quot;')}" placeholder="Degree, University, Year" oninput="APP.resume.education[${i}]=this.value">
+      <button onclick="removeListItem('education',${i})"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+  `).join('');
+}
+
+function addEducation() { APP.resume.education.push(''); renderEducation(); }
+
+function renderCertifications() {
+  const list = document.getElementById('cert-list');
+  if (!APP.resume.certifications.length) {
+    list.innerHTML = '<div class="text-muted text-sm" style="padding: 8px 0;">No certifications added yet.</div>';
+    return;
+  }
+  list.innerHTML = APP.resume.certifications.map((c, i) => `
+    <div class="list-item">
+      <input value="${(c||'').replace(/"/g,'&quot;')}" placeholder="Certification name + issuer" oninput="APP.resume.certifications[${i}]=this.value">
+      <button onclick="removeListItem('certifications',${i})"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+  `).join('');
+}
+
+function addCert() { APP.resume.certifications.push(''); renderCertifications(); }
+
+function renderLanguages() {
+  const list = document.getElementById('lang-list');
+  if (!APP.resume.languages.length) {
+    list.innerHTML = '<div class="text-muted text-sm" style="padding: 8px 0;">No languages added yet.</div>';
+    return;
+  }
+  list.innerHTML = APP.resume.languages.map((l, i) => `
+    <div class="list-item">
+      <input value="${(l||'').replace(/"/g,'&quot;')}" placeholder="Language - Level (e.g. German - A1)" oninput="APP.resume.languages[${i}]=this.value">
+      <button onclick="removeListItem('languages',${i})"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+  `).join('');
+}
+
+function addLang() { APP.resume.languages.push(''); renderLanguages(); }
+
+function renderAchievements() {
+  const list = document.getElementById('ach-list');
+  if (!APP.resume.achievements.length) {
+    list.innerHTML = '<div class="text-muted text-sm" style="padding: 8px 0;">No achievements added yet.</div>';
+    return;
+  }
+  list.innerHTML = APP.resume.achievements.map((a, i) => `
+    <div class="list-item">
+      <input value="${(a||'').replace(/"/g,'&quot;')}" placeholder="e.g. 120% increase in organic traffic" oninput="APP.resume.achievements[${i}]=this.value">
+      <button onclick="removeListItem('achievements',${i})"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+  `).join('');
+}
+
+function addAchievement() { APP.resume.achievements.push(''); renderAchievements(); }
+
+function removeListItem(key, i) {
+  APP.resume[key].splice(i, 1);
+  if (key === 'education') renderEducation();
+  if (key === 'certifications') renderCertifications();
+  if (key === 'languages') renderLanguages();
+  if (key === 'achievements') renderAchievements();
+}
+
+async function saveResume() {
+  // Read form inputs
+  APP.resume.full_name = document.getElementById('r-name').value;
+  APP.resume.title = document.getElementById('r-title').value;
+  APP.resume.location = document.getElementById('r-location').value;
+  APP.resume.phone = document.getElementById('r-phone').value;
+  APP.resume.portfolio = document.getElementById('r-portfolio').value;
+  APP.resume.linkedin = document.getElementById('r-linkedin').value;
+  APP.resume.summary = document.getElementById('r-summary').value;
+  try {
+    await api('/api/resume', { method: 'POST', body: JSON.stringify(APP.resume) });
+    // Update header name + avatar
+    if (APP.resume.full_name) {
+      document.querySelector('.user-name').textContent = APP.resume.full_name;
+      document.getElementById('user-avatar').textContent = APP.resume.full_name[0].toUpperCase();
+    }
+    toast('Resume saved');
+  } catch (e) {
+    toast('Save failed: ' + e.message, 'error');
+  }
+}
+
+function toast(msg, type = 'success') {
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${type==='error'?'#EF4444':'#10B981'};color:white;padding:12px 24px;border-radius:10px;font-size:13px;font-weight:500;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,0.15);animation:fadeIn 0.3s ease;`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// JOBS — EXCEL TABLE VIEW
+// ─────────────────────────────────────────────────────────────────
+const JOBSTATE = { selected: new Set(), sortKey: 'match_score', sortDir: 'desc' };
+
+async function loadJobs() {
+  try { APP.jobs = await api('/api/jobs'); } catch (e) { APP.jobs = []; }
+}
+
+function setSort(key) {
+  if (JOBSTATE.sortKey === key) {
+    JOBSTATE.sortDir = JOBSTATE.sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    JOBSTATE.sortKey = key;
+    JOBSTATE.sortDir = key === 'match_score' ? 'desc' : 'asc';
+  }
+  renderJobs();
+}
+
+function renderJobs() {
+  const tbody = document.getElementById('jobs-list');
+  const q = (document.getElementById('job-filter')?.value || '').toLowerCase();
+
+  // Filter
+  let jobs = APP.jobs.filter(j => {
+    if (!q) return true;
+    return (j.title || '').toLowerCase().includes(q) ||
+           (j.company || '').toLowerCase().includes(q) ||
+           (j.location || '').toLowerCase().includes(q);
+  });
+
+  // Sort
+  const k = JOBSTATE.sortKey;
+  const dir = JOBSTATE.sortDir === 'asc' ? 1 : -1;
+  jobs.sort((a, b) => {
+    let av = a[k], bv = b[k];
+    if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+    return String(av || '').localeCompare(String(bv || '')) * dir;
+  });
+
+  // Update sort indicators
+  document.querySelectorAll('.sort-ind').forEach(el => el.textContent = '');
+  const indEl = document.getElementById('sort-' + k);
+  if (indEl) indEl.textContent = JOBSTATE.sortDir === 'asc' ? '▲' : '▼';
+
+  document.getElementById('job-count').textContent = `${jobs.length} job${jobs.length !== 1 ? 's' : ''}`;
+
+  if (!jobs.length) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:48px;color:var(--text-3);">
+      No jobs yet. <button class="btn btn-ghost btn-sm" onclick="openModal('modal-csv')">Import CSV</button>
+      <button class="btn btn-primary btn-sm" onclick="runAgent()">Run Agent</button>
+    </td></tr>`;
+    updateBulkBar();
+    return;
+  }
+
+  tbody.innerHTML = jobs.map(j => {
+    const m = j.match_score || 0;
+    const matchBg = m >= 80 ? 'var(--green-50)' : m >= 65 ? 'var(--orange-50)' : 'var(--surf)';
+    const matchColor = m >= 80 ? '#047857' : m >= 65 ? '#B45309' : 'var(--text-2)';
+    const selected = JOBSTATE.selected.has(j.id);
+    return `
+      <tr class="${selected ? 'selected' : ''}" data-id="${j.id}">
+        <td class="col-check">
+          <input type="checkbox" ${selected ? 'checked' : ''} onclick="event.stopPropagation();toggleRow(${j.id}, this.checked)">
+        </td>
+        <td><span class="cell-match" style="background:${matchBg};color:${matchColor};">${m}%</span></td>
+        <td class="cell-title" onclick="openJobDetail(${j.id})" title="${escapeAttr(j.title)}">${escapeHtml(j.title || '')}</td>
+        <td class="cell-company" title="${escapeAttr(j.company)}">${escapeHtml(j.company || '')}</td>
+        <td title="${escapeAttr(j.location)}">${escapeHtml(j.location || '—')}</td>
+        <td>${escapeHtml(j.job_type || '—')}</td>
+        <td>${escapeHtml(j.salary || '—')}</td>
+        <td class="cell-email">${j.hiring_email ? `<a href="mailto:${escapeAttr(j.hiring_email)}">${escapeHtml(j.hiring_email)}</a>` : '—'}</td>
+        <td>${escapeHtml(j.site || '—')}</td>
+        <td class="col-actions">
+          <div class="row-actions">
+            <button class="row-btn" title="View" onclick="openJobDetail(${j.id})">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button class="row-btn" title="Cover Letter" onclick="quickCoverLetter(${j.id})">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </button>
+            <button class="row-btn" title="Apply" onclick="quickApply(${j.id})">
+              <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+            <button class="row-btn danger" title="Delete" onclick="deleteJob(${j.id})">
+              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Sync check-all box
+  const ca = document.getElementById('check-all');
+  if (ca) ca.checked = jobs.length > 0 && jobs.every(j => JOBSTATE.selected.has(j.id));
+  updateBulkBar();
+}
+
+function toggleRow(id, checked) {
+  if (checked) JOBSTATE.selected.add(id); else JOBSTATE.selected.delete(id);
+  // Update row class without full re-render
+  const row = document.querySelector(`tr[data-id="${id}"]`);
+  if (row) row.classList.toggle('selected', checked);
+  updateBulkBar();
+}
+
+function toggleAll(checked) {
+  // Apply to currently visible (filtered) rows only
+  const q = (document.getElementById('job-filter')?.value || '').toLowerCase();
+  const visible = APP.jobs.filter(j => {
+    if (!q) return true;
+    return (j.title || '').toLowerCase().includes(q) ||
+           (j.company || '').toLowerCase().includes(q) ||
+           (j.location || '').toLowerCase().includes(q);
+  });
+  if (checked) visible.forEach(j => JOBSTATE.selected.add(j.id));
+  else visible.forEach(j => JOBSTATE.selected.delete(j.id));
+  renderJobs();
+}
+
+function clearSelection() {
+  JOBSTATE.selected.clear();
+  renderJobs();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulk-actions');
+  const count = JOBSTATE.selected.size;
+  if (count > 0) {
+    bar.style.display = 'flex';
+    document.getElementById('bulk-count').textContent = `${count} selected`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+async function bulkDeleteSelected() {
+  const ids = [...JOBSTATE.selected];
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} selected job${ids.length > 1 ? 's' : ''}?`)) return;
+  try {
+    const r = await api('/api/jobs/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) });
+    log(`Deleted ${r.deleted} jobs`, 'success');
+    JOBSTATE.selected.clear();
+    await loadJobs();
+    renderJobs();
+    await loadStats();
+    toast(`Deleted ${r.deleted} jobs`);
+  } catch (e) {
+    toast('Bulk delete failed: ' + e.message, 'error');
+  }
+}
+
+async function dedupAllJobs() {
+  if (!confirm('Remove duplicate jobs (same title + company)?')) return;
+  try {
+    const r = await api('/api/jobs/dedup', { method: 'POST' });
+    log(`Removed ${r.removed} duplicates`, 'success');
+    toast(`Removed ${r.removed} duplicate${r.removed !== 1 ? 's' : ''}`);
+    await loadJobs();
+    renderJobs();
+    await loadStats();
+  } catch (e) {
+    toast('Dedup failed: ' + e.message, 'error');
+  }
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+function escapeAttr(s) {
+  return String(s || '').replace(/"/g, '&quot;');
+}
+
+async function deleteJob(id) {
+  if (!confirm('Delete this job?')) return;
+  try {
+    await api(`/api/jobs/${id}`, { method: 'DELETE' });
+    APP.jobs = APP.jobs.filter(j => j.id !== id);
+    JOBSTATE.selected.delete(id);
+    renderJobs();
+    await loadStats();
+    toast('Job deleted');
+  } catch (e) { toast('Delete failed', 'error'); }
+}
+
+function openJobDetail(id) {
+  const j = APP.jobs.find(x => x.id === id);
+  if (!j) return;
+  const m = j.match_score || 0;
+  const matchClass = m >= 80 ? 'match-high' : m >= 65 ? 'match-mid' : 'match-low';
+  const modal = document.getElementById('modal-job-content');
+  modal.innerHTML = `
+    <button class="modal-close" onclick="closeModal('modal-job')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="flex gap-12" style="align-items: center; margin-bottom: 20px;">
+      <div class="company-logo" style="width: 52px; height: 52px; font-size: 20px;">${(j.company||'?')[0]}</div>
+      <div class="flex-1">
+        <div style="font: 700 20px 'Plus Jakarta Sans', sans-serif;">${escapeHtml(j.title)}</div>
+        <div class="text-muted">${escapeHtml(j.company)} • ${escapeHtml(j.location || '')}</div>
+      </div>
+      <div class="match-badge ${matchClass}" style="font-size: 14px; padding: 6px 14px;">${m}% Match</div>
+    </div>
+
+    <div class="jc-meta" style="margin-bottom: 16px;">
+      ${j.job_type ? `<span class="meta-chip">${escapeHtml(j.job_type)}</span>` : ''}
+      ${j.site ? `<span class="meta-chip">${escapeHtml(j.site)}</span>` : ''}
+      ${j.salary ? `<span class="meta-chip">${escapeHtml(j.salary)}</span>` : ''}
+      ${j.company_size ? `<span class="meta-chip">${escapeHtml(j.company_size)}</span>` : ''}
+    </div>
+
+    <hr class="divider">
+
+    <div class="fw-600" style="margin-bottom: 8px;">Description</div>
+    <div class="text-muted" style="font-size: 13px; line-height: 1.7; margin-bottom: 18px;">${escapeHtml(j.description || '')}</div>
+
+    ${(j.requirements && j.requirements.length) ? `
+      <div class="fw-600" style="margin-bottom: 8px;">Requirements</div>
+      <ul style="list-style: none; padding: 0; margin-bottom: 18px;">
+        ${j.requirements.map(r => `<li style="display: flex; gap: 8px; font-size: 13px; color: var(--text-2); margin-bottom: 6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:3px;"><polyline points="20 6 9 17 4 12"/></svg>${escapeHtml(r)}</li>`).join('')}
+      </ul>
+    ` : ''}
+
+    ${j.cover_letter ? `
+      <div class="fw-600" style="margin-bottom: 8px;">Cover Letter</div>
+      <div class="output-box" style="margin-bottom: 18px;">${escapeHtml(j.cover_letter)}</div>
+    ` : ''}
+
+    <div class="flex gap-8">
+      <button class="btn btn-ghost" onclick="quickCoverLetter(${j.id})">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        ${j.cover_letter ? 'Regenerate' : 'Generate'} Cover Letter
+      </button>
+      <button class="btn btn-primary" onclick="quickApply(${j.id})">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Apply via Email
+      </button>
+      ${j.url ? `<a class="btn btn-ghost" href="${escapeHtml(j.url)}" target="_blank">View Job</a>` : ''}
+    </div>
+  `;
+  openModal('modal-job');
+}
+
+function resumeContext() {
+  const r = APP.resume;
+  return `Name: ${r.full_name}
+Title: ${r.title}
+Location: ${r.location}
+Email: (private)
+Portfolio: ${r.portfolio || 'N/A'}
+LinkedIn: ${r.linkedin || 'N/A'}
+
+Summary: ${r.summary || 'N/A'}
+
+Skills: ${(r.skills || []).join(', ')}
+
+Experience:
+${(r.experience || []).map(e => `- ${e.title} at ${e.company} (${e.start} - ${e.end})\n  ${e.desc || ''}`).join('\n')}
+
+Education: ${(r.education || []).join('; ')}
+Certifications: ${(r.certifications || []).join('; ')}
+Languages: ${(r.languages || []).join('; ')}
+Achievements: ${(r.achievements || []).join('; ')}`;
+}
+
+async function quickCoverLetter(id) {
+  const j = APP.jobs.find(x => x.id === id);
+  if (!j) return;
+  closeModal('modal-job');
+  log(`Generating cover letter for ${j.title} @ ${j.company}...`, 'info');
+  try {
+    const cl = await claude(
+      'You are an expert cover letter writer for European job markets, especially DACH region.',
+      `Write a personalized, professional cover letter (300-340 words) for this candidate.
+
+CANDIDATE PROFILE:
+${resumeContext()}
+
+JOB:
+Title: ${j.title}
+Company: ${j.company}
+Location: ${j.location}
+Type: ${j.job_type}
+Description: ${j.description}
+Requirements: ${(j.requirements || []).join(', ')}
+
+Instructions:
+- Match candidate skills to JD requirements specifically
+- Reference the company by name
+- Sign as ${APP.resume.full_name}
+- Professional, confident tone
+- No generic openers like "I am writing to express my interest"`
+    );
+    j.cover_letter = cl;
+    await api(`/api/jobs/${id}`, { method: 'PATCH', body: JSON.stringify({ cover_letter: cl }) });
+    log(`Cover letter ready for ${j.company}`, 'success');
+    openJobDetail(id);
+    await loadStats();
+  } catch (e) {
+    log('Cover letter error: ' + e.message, 'error');
+    toast('Cover letter failed', 'error');
+  }
+}
+
+async function quickApply(id) {
+  const j = APP.jobs.find(x => x.id === id);
+  if (!j) return;
+  closeModal('modal-job');
+
+  // Generate cover letter if missing
+  if (!j.cover_letter) {
+    await quickCoverLetter(id);
+    closeModal('modal-job');
+  }
+
+  const body = j.cover_letter || `Dear Hiring Team,
+
+I am writing to express my interest in the ${j.title} position at ${j.company}.
+
+[Cover letter will be generated]
+
+Best regards,
+${APP.resume.full_name}`;
+
+  document.getElementById('c-to').value = j.hiring_email || '';
+  document.getElementById('c-company').value = j.company || '';
+  document.getElementById('c-role').value = j.title || '';
+  document.getElementById('c-subject').value = `Application: ${j.title} — ${APP.resume.full_name}`;
+  document.getElementById('c-body').value = body;
+  document.getElementById('c-jobid').value = j.id;
+
+  // Show Gmail alert if not connected
+  const alertBox = document.getElementById('compose-alert');
+  if (!APP.gmailConnected) {
+    alertBox.innerHTML = `<div class="alert alert-warn"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><div>Connect Gmail first to send emails. <a href="#" onclick="closeModal('modal-compose');openModal('modal-gmail');return false;" style="color:var(--orange);text-decoration:underline;">Set up Gmail</a></div></div>`;
+  } else {
+    alertBox.innerHTML = '';
+  }
+
+  openModal('modal-compose');
+}
+
+async function aiRewriteEmail() {
+  const current = document.getElementById('c-body').value;
+  const company = document.getElementById('c-company').value;
+  const role = document.getElementById('c-role').value;
+  log('Rewriting email with AI...', 'info');
+  try {
+    const better = await claude(
+      'You are an expert at writing professional job application emails.',
+      `Rewrite this email to be more compelling and professional. Keep the cover letter content but improve clarity, confidence, and connection to the role.
+
+ROLE: ${role}
+COMPANY: ${company}
+
+CURRENT EMAIL:
+${current}
+
+Sign as: ${APP.resume.full_name}`
+    );
+    document.getElementById('c-body').value = better;
+    log('Email rewritten', 'success');
+  } catch (e) {
+    log('Rewrite failed: ' + e.message, 'error');
+  }
+}
+
+async function sendComposedEmail() {
+  if (!APP.gmailConnected) {
+    toast('Connect Gmail first', 'error');
+    openModal('modal-gmail');
+    return;
+  }
+  const payload = {
+    to: document.getElementById('c-to').value,
+    company: document.getElementById('c-company').value,
+    role: document.getElementById('c-role').value,
+    subject: document.getElementById('c-subject').value,
+    body: document.getElementById('c-body').value,
+    job_id: document.getElementById('c-jobid').value || null
+  };
+  if (!payload.to) { toast('Recipient email required', 'error'); return; }
+  log(`Sending email to ${payload.to}...`, 'info');
+  try {
+    await api('/api/email/send', { method: 'POST', body: JSON.stringify(payload) });
+    log(`Email sent to ${payload.to} for ${payload.role}`, 'success');
+    toast('Email sent successfully');
+    closeModal('modal-compose');
+    await loadApplications();
+    renderApplications();
+    await loadStats();
+  } catch (e) {
+    log('Send failed: ' + e.message, 'error');
+    toast('Send failed: ' + e.message, 'error');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CSV IMPORT
+// ─────────────────────────────────────────────────────────────────
+async function uploadCSV() {
+  const f = document.getElementById('csv-file').files[0];
+  if (!f) { toast('Select a CSV file', 'error'); return; }
+  const alert = document.getElementById('csv-alert');
+  alert.innerHTML = `<div class="alert alert-info"><span class="loader"></span><div>Importing...</div></div>`;
+  try {
+    const fd = new FormData();
+    fd.append('file', f);
+    const res = await fetch('/api/jobs/import-csv', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    alert.innerHTML = `<div class="alert alert-success"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><div>Imported ${data.imported} jobs</div></div>`;
+    log(`Imported ${data.imported} jobs from CSV`, 'success');
+    await loadJobs();
+    renderJobs();
+    await loadStats();
+    setTimeout(() => closeModal('modal-csv'), 1500);
+  } catch (e) {
+    alert.innerHTML = `<div class="alert alert-warn"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg><div>${e.message}</div></div>`;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// AGENT
+// ─────────────────────────────────────────────────────────────────
+function runAgent() {
+  openModal('modal-agent');
+}
+
+async function startAgent() {
+  const keywords = document.getElementById('a-keywords').value;
+  const location = document.getElementById('a-location').value;
+  const count = parseInt(document.getElementById('a-count').value);
+  closeModal('modal-agent');
+  log(`AI agent searching: "${keywords}" in ${location}`, 'info');
+  try {
+    const raw = await claude(
+      'You are a job board agent. Return ONLY a valid JSON array. No markdown.',
+      `Generate ${count} realistic job listings for: "${keywords}" in "${location}".
+Each must be a JSON object with: title, company, location, type, site, url, salary, posted, matchScore (60-94), description (2 sentences), requirements (array of 5), hiringEmail (realistic), companySize, industry.
+Tailor matchScore based on this candidate: ${resumeContext().slice(0, 1000)}.
+Return ONLY the JSON array.`
+    );
+    let jobs;
+    try {
+      const cleaned = raw.replace(/```json|```/g, '').trim();
+      const match = cleaned.match(/\[[\s\S]*\]/);
+      if (!match) throw new Error('No JSON array found in response. First 200 chars: ' + cleaned.slice(0, 200));
+      jobs = JSON.parse(match[0]);
+    } catch (parseErr) {
+      throw new Error('Could not parse jobs JSON: ' + parseErr.message);
+    }
+    log(`AI found ${jobs.length} matching jobs`, 'success');
+
+    // Save to backend
+    const result = await api('/api/jobs', { method: 'POST', body: JSON.stringify(jobs) });
+    if (result.skipped) {
+      log(`Added ${result.added} new jobs (${result.skipped} duplicates skipped)`, 'success');
+      toast(`${result.added} new jobs, ${result.skipped} duplicates skipped`);
+    } else {
+      log(`Added ${result.added} new jobs`, 'success');
+      toast(`Added ${result.added} new jobs`);
+    }
+    await loadJobs();
+    renderJobs();
+    await loadStats();
+    log('Switch to the Jobs tab to view them in the table.', 'info');
+    switchTabByName('jobs');
+  } catch (e) {
+    log('Agent error: ' + e.message, 'error');
+    toast('Agent failed: ' + e.message, 'error');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// GMAIL
+// ─────────────────────────────────────────────────────────────────
+async function loadGmail() {
+  try {
+    const data = await api('/api/gmail');
+    APP.gmailConnected = data.connected;
+    const status = document.getElementById('gmail-status');
+    const text = document.getElementById('gmail-status-text');
+    if (data.connected) {
+      status.classList.add('connected');
+      text.textContent = data.gmail_address;
+      document.getElementById('g-email').value = data.gmail_address;
+      document.getElementById('g-disconnect').style.display = '';
+    } else {
+      status.classList.remove('connected');
+      text.textContent = 'Gmail not connected';
+    }
+  } catch (e) { /* ignore */ }
+}
+
+async function saveGmail() {
+  const email = document.getElementById('g-email').value.trim();
+  const pw = document.getElementById('g-pw').value.trim();
+  const alert = document.getElementById('gmail-alert');
+  if (!email || !pw) {
+    alert.innerHTML = `<div class="alert alert-warn"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg><div>Email and app password required.</div></div>`;
+    return;
+  }
+  alert.innerHTML = `<div class="alert alert-info"><span class="loader"></span><div>Verifying with Gmail...</div></div>`;
+  try {
+    await api('/api/gmail', { method: 'POST', body: JSON.stringify({ gmail_address: email, app_password: pw }) });
+    alert.innerHTML = `<div class="alert alert-success"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><div>Gmail connected successfully.</div></div>`;
+    APP.gmailConnected = true;
+    await loadGmail();
+    setTimeout(() => { closeModal('modal-gmail'); }, 1500);
+  } catch (e) {
+    alert.innerHTML = `<div class="alert alert-warn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg><div>${e.message}</div></div>`;
+  }
+}
+
+async function disconnectGmail() {
+  if (!confirm('Disconnect Gmail?')) return;
+  await api('/api/gmail', { method: 'DELETE' });
+  APP.gmailConnected = false;
+  await loadGmail();
+  document.getElementById('g-pw').value = '';
+  document.getElementById('g-disconnect').style.display = 'none';
+  toast('Gmail disconnected');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// INBOX SCAN
+// ─────────────────────────────────────────────────────────────────
+async function scanInbox() {
+  if (!APP.gmailConnected) { openModal('modal-gmail'); return; }
+  const btn = document.getElementById('scan-btn-text');
+  btn.innerHTML = '<span class="loader"></span> Scanning...';
+  log('Connecting to Gmail IMAP...', 'info');
+  switchTabByName('dashboard');  // show the log
+  try {
+    const r = await api('/api/email/scan', { method: 'POST' });
+    const dbg = r.debug || {};
+    log(`Inbox scan complete: ${dbg.total_scanned || 0} emails scanned in last 30 days`, 'info');
+    log(`Job-related emails found: ${dbg.job_related || 0}`, 'info');
+    if (dbg.skipped_existing) log(`Skipped ${dbg.skipped_existing} already-saved emails`, 'info');
+    log(`New replies saved: ${r.new_replies}`, r.new_replies ? 'success' : 'warn');
+
+    if (r.new_replies) {
+      r.replies.forEach(rp => {
+        const matchedNote = rp.matched_app ? '(matched to your application)' : '(unmatched)';
+        log(`  → ${rp.classification.toUpperCase()}: ${rp.subject} ${matchedNote}`, 'info');
+      });
+    } else if ((dbg.job_related || 0) === 0) {
+      log('No job-related emails detected. The scanner looks for keywords like "application", "interview", "position" in the subject, or sender addresses like hr@, careers@, recruit*.', 'warn');
+    }
+
+    if (dbg.errors && dbg.errors.length) {
+      dbg.errors.forEach(e => log('Scan warning: ' + e, 'warn'));
+    }
+
+    await loadReplies();
+    await loadApplications();
+    await loadStats();
+    renderReplies();
+    renderApplications();
+    toast(`Scan: ${r.new_replies} new replies found`);
+  } catch (e) {
+    log('Scan error: ' + e.message, 'error');
+    toast('Scan failed: ' + e.message, 'error');
+  }
+  btn.textContent = 'Scan Inbox';
+}
+
+// ─────────────────────────────────────────────────────────────────
+// REPLIES & APPLICATIONS
+// ─────────────────────────────────────────────────────────────────
+async function loadReplies() { try { APP.replies = await api('/api/replies'); } catch (e) { APP.replies = []; } }
+async function loadApplications() { try { APP.applications = await api('/api/applications'); } catch (e) { APP.applications = []; } }
+
+function renderReplies() {
+  const body = document.getElementById('replies-body');
+  if (!APP.replies.length) {
+    body.innerHTML = '<tr><td colspan="5" class="center text-muted" style="padding: 32px;">No replies scanned yet. Connect Gmail and click "Scan Inbox".</td></tr>';
+    return;
+  }
+  body.innerHTML = APP.replies.map(r => `
+    <tr>
+      <td><div class="fw-600">${escapeHtml(r.from_email)}</div><div class="text-sm text-muted">${escapeHtml(r.company || '')}</div></td>
+      <td>${escapeHtml(r.subject || '')}</td>
+      <td><span class="status-pill status-${r.classification}">${escapeHtml(r.classification || 'other')}</span></td>
+      <td class="text-muted">${escapeHtml(r.ai_summary || '')}</td>
+      <td class="text-muted text-sm">${r.received_at ? new Date(r.received_at).toLocaleDateString() : ''}</td>
+    </tr>
+  `).join('');
+}
+
+function renderApplications() {
+  const body = document.getElementById('apps-body');
+  if (!APP.applications.length) {
+    body.innerHTML = '<tr><td colspan="6" class="center text-muted" style="padding: 32px;">No applications yet.</td></tr>';
+    return;
+  }
+  body.innerHTML = APP.applications.map(a => `
+    <tr>
+      <td class="fw-600">${escapeHtml(a.company || '')}</td>
+      <td>${escapeHtml(a.role || '')}</td>
+      <td class="text-sm text-muted">${escapeHtml(a.to_email || '')}</td>
+      <td><span class="status-pill status-${a.status}">${escapeHtml(a.status || 'sent')}</span></td>
+      <td class="text-muted text-sm">${escapeHtml(a.reply_summary || '—')}</td>
+      <td class="text-muted text-sm">${a.sent_at ? new Date(a.sent_at).toLocaleDateString() : ''}</td>
+    </tr>
+  `).join('');
+}
+
+function exportCSV() {
+  if (!APP.applications.length) { toast('No applications to export', 'error'); return; }
+  const rows = [['Company', 'Role', 'To Email', 'Subject', 'Status', 'Reply Summary', 'Sent At']];
+  APP.applications.forEach(a => rows.push([a.company, a.role, a.to_email, a.subject, a.status, a.reply_summary || '', a.sent_at]));
+  const csv = rows.map(r => r.map(c => `"${(c || '').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'applications.csv' });
+  a.click();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// STATS & SPARKLINES
+// ─────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const s = await api('/api/stats');
+    APP.stats = s;
+    document.getElementById('s-jobs').textContent = s.jobs;
+    document.getElementById('s-match').textContent = s.avg_match + '%';
+    document.getElementById('s-apps').textContent = s.applications;
+    document.getElementById('s-rate').textContent = s.response_rate + '%';
+    document.getElementById('s-replies').textContent = s.replies;
+    document.getElementById('s-interviews').textContent = s.interviews;
+    document.getElementById('s-offers').textContent = s.offers;
+    document.getElementById('s-rejected').textContent = s.rejected;
+
+    // Cover letters count
+    const clCount = APP.jobs.filter(j => j.cover_letter).length;
+    document.getElementById('s-cl').textContent = clCount;
+    const clWords = APP.jobs.filter(j => j.cover_letter).reduce((sum, j) => sum + j.cover_letter.split(/\s+/).length, 0);
+    document.getElementById('s-cl-avg').textContent = clCount ? Math.round(clWords / clCount) : '—';
+
+    // Bottom strip
+    document.getElementById('ss-jobs').textContent = s.jobs;
+    const companies = new Set(APP.jobs.map(j => j.company).filter(Boolean));
+    document.getElementById('ss-companies').textContent = companies.size;
+    document.getElementById('ss-interview').textContent = s.interviews;
+    document.getElementById('ss-success').textContent = s.response_rate + '%';
+
+    // Sparklines
+    drawSparkline('spark-jobs', generateSparkData(s.jobs), '#2D6CDF');
+    drawSparkline('spark-apps', generateSparkData(s.applications), '#6B5BFF');
+    drawSparkline('spark-replies', generateSparkData(s.replies), '#14B8A6');
+    drawSparkline('spark-cl', generateSparkData(clCount), '#F59E0B');
+    drawSparkline('spark-outcomes', generateSparkData(s.interviews + s.offers), '#EC4899');
+  } catch (e) { console.error(e); }
+}
+
+function generateSparkData(total) {
+  // Generate trending-up sparkline data
+  const points = 16;
+  const arr = [];
+  if (total === 0) {
+    for (let i = 0; i < points; i++) arr.push(0);
+    return arr;
+  }
+  let v = total * 0.3;
+  for (let i = 0; i < points; i++) {
+    v += (total / points) * (0.5 + Math.random());
+    arr.push(Math.max(0, v));
+  }
+  return arr;
+}
+
+function drawSparkline(id, data, color) {
+  const svg = document.getElementById(id);
+  if (!svg) return;
+  const w = 200, h = 40;
+  const max = Math.max(...data, 1);
+  const step = w / (data.length - 1);
+  const pts = data.map((v, i) => `${i * step},${h - (v / max) * (h - 4) - 2}`).join(' ');
+  const areaPts = `0,${h} ${pts} ${w},${h}`;
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="g-${id}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <polygon points="${areaPts}" fill="url(#g-${id})"/>
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  `;
+}

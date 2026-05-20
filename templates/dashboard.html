@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobHunter Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue: #2D6CDF;
+  --blue-l: #5B8FE8;
+  --blue-50: #EFF4FE;
+  --blue-100: #DBE6FB;
+  --purple: #6B5BFF;
+  --purple-50: #F2F0FF;
+  --teal: #14B8A6;
+  --teal-50: #ECFDF5;
+  --orange: #F59E0B;
+  --orange-50: #FFFBEB;
+  --pink: #EC4899;
+  --pink-50: #FDF2F8;
+  --green: #10B981;
+  --green-50: #ECFDF5;
+  --red: #EF4444;
+  --red-50: #FEF2F2;
+
+  --bg: #F7F9FC;
+  --card: #FFFFFF;
+  --surf: #F8FAFC;
+  --border: #E4E8F0;
+  --border-h: #C9D2E0;
+  --text: #0F172A;
+  --text-2: #475569;
+  --text-3: #94A3B8;
+  --text-4: #CBD5E1;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-size: 14px;
+}
+
+/* ─── TOP NAV ──────────────────────────────────── */
+.topnav {
+  background: white;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 16px;
+  position: sticky; top: 0; z-index: 50;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; }
+
+.brand-mark {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.brand-mark svg { width: 18px; height: 18px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.brand-name {
+  font: 800 18px 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.5px;
+}
+.brand-name span { color: var(--blue); }
+
+.nav-tabs {
+  display: flex; gap: 4px;
+  margin-left: 24px;
+}
+
+.nav-tab {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.nav-tab svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.nav-tab:hover { background: var(--surf); color: var(--text); }
+.nav-tab.active { background: var(--blue-50); color: var(--blue); font-weight: 600; }
+
+.nav-right {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 12px;
+}
+
+.gmail-status {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: var(--surf);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.gmail-status:hover { border-color: var(--border-h); }
+
+.gmail-status.connected { background: var(--green-50); color: #047857; border-color: #A7F3D0; }
+
+.gmail-status .dot {
+  width: 6px; height: 6px;
+  background: #94A3B8;
+  border-radius: 50%;
+}
+.gmail-status.connected .dot { background: var(--green); }
+
+.user-menu {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 14px 4px 4px;
+  cursor: pointer;
+}
+
+.user-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font: 600 12px 'Plus Jakarta Sans', sans-serif;
+}
+
+.user-name { font-size: 13px; font-weight: 500; }
+
+.user-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  padding: 6px;
+  min-width: 180px;
+  display: none;
+  z-index: 100;
+}
+
+.user-menu-wrap { position: relative; }
+.user-menu-wrap.open .user-menu-dropdown { display: block; }
+
+.menu-item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.menu-item:hover { background: var(--surf); }
+.menu-item svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.menu-item.danger { color: var(--red); }
+
+/* ─── MAIN ─────────────────────────────────────── */
+.main {
+  padding: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+
+.page-title {
+  font: 700 26px 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+
+.page-title-gradient {
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.page-subtitle { color: var(--text-2); font-size: 14px; }
+
+.page-actions { display: flex; gap: 8px; }
+
+/* ─── TAB PANES ────────────────────────────────── */
+.tab-pane { display: none; }
+.tab-pane.active { display: block; animation: fadeIn 0.3s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── BENTO GRID ───────────────────────────────── */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.bento-card {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  transition: all 0.2s;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+}
+
+.bento-card:hover {
+  border-color: var(--blue);
+  box-shadow: 0 8px 24px rgba(45, 108, 223, 0.12);
+  transform: translateY(-2px);
+}
+
+.bento-card.featured {
+  background: linear-gradient(135deg, #4338CA 0%, #6B5BFF 50%, #8B5CF6 100%);
+  color: white;
+  border: 2px solid #5849E5;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 240px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(107, 91, 255, 0.25);
+}
+
+.bento-card.featured:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(107, 91, 255, 0.35);
+}
+
+.bento-card.featured::before {
+  content: '';
+  position: absolute;
+  top: -50%; right: -20%;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(255,255,255,0.15), transparent);
+  border-radius: 50%;
+}
+
+.bento-header {
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-bottom: 16px;
+}
+
+.bento-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.bento-icon svg { width: 20px; height: 20px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.ic-blue { background: var(--blue-50); color: var(--blue); }
+.ic-purple { background: var(--purple-50); color: var(--purple); }
+.ic-teal { background: var(--teal-50); color: var(--teal); }
+.ic-orange { background: var(--orange-50); color: var(--orange); }
+.ic-pink { background: var(--pink-50); color: var(--pink); }
+.ic-green { background: var(--green-50); color: var(--green); }
+.ic-red { background: var(--red-50); color: var(--red); }
+
+.bento-icon svg { stroke: currentColor; }
+
+.bento-title-row { flex: 1; min-width: 0; }
+.bento-title { font: 600 15px 'Plus Jakarta Sans', sans-serif; margin-bottom: 2px; }
+.bento-desc { font-size: 12px; color: var(--text-2); }
+
+.bento-stats {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin: 12px 0;
+}
+
+.bento-stat-block { flex: 1; min-width: 0; }
+.bento-stat-num { font: 800 28px 'Plus Jakarta Sans', sans-serif; line-height: 1.1; letter-spacing: -0.5px; color: var(--text); }
+.bento-stat-lbl { font-size: 11px; color: var(--text-2); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+
+.spark {
+  height: 40px;
+  margin-top: 14px;
+  margin-bottom: 12px;
+}
+
+.bento-link {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--surf);
+  border-radius: 8px;
+  margin-top: auto;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.bento-link:hover { background: var(--blue-50); }
+
+.bento-link svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+
+.featured-content { position: relative; z-index: 1; }
+
+.featured-icon {
+  width: 44px; height: 44px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 14px;
+}
+
+.featured-icon svg { width: 22px; height: 22px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.featured-title { font: 700 20px 'Plus Jakarta Sans', sans-serif; line-height: 1.3; margin-bottom: 6px; }
+.featured-sub { font-size: 13px; opacity: 0.85; margin-bottom: 16px; }
+
+.featured-btn {
+  background: white;
+  color: var(--blue);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font: 600 13px 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all 0.15s;
+}
+
+.featured-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.featured-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+
+/* ─── BOTTOM STATS STRIP ───────────────────────── */
+.stats-strip {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+}
+
+.stat-block {
+  display: flex; align-items: center; gap: 16px;
+}
+
+.stat-block-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-block-icon svg { width: 22px; height: 22px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.stat-block-info { min-width: 0; }
+.stat-block-num { font: 800 26px 'Plus Jakarta Sans', sans-serif; line-height: 1.1; letter-spacing: -0.5px; color: var(--text); }
+.stat-block-lbl { font-size: 12px; color: var(--text-2); font-weight: 600; margin-top: 2px; }
+.stat-block-sub { font-size: 11px; color: var(--green); margin-top: 2px; display: flex; align-items: center; gap: 3px; }
+.stat-block-sub svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+
+/* ─── FORMS ────────────────────────────────────── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-grid.cols-1 { grid-template-columns: 1fr; }
+
+.field { margin-bottom: 14px; }
+
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.ctrl, input.ctrl, select.ctrl, textarea.ctrl {
+  width: 100%;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font: 13px 'Inter', sans-serif;
+  padding: 9px 12px;
+  outline: none;
+  transition: all 0.15s;
+}
+
+.ctrl:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
+}
+
+textarea.ctrl { resize: vertical; min-height: 80px; line-height: 1.6; }
+select.ctrl { cursor: pointer; }
+
+/* ─── BUTTONS ──────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font: 500 13px 'Inter', sans-serif;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+.btn-primary { background: var(--blue); color: white; border-color: var(--blue); }
+.btn-primary:hover { background: var(--blue-d); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-ghost { background: white; color: var(--text); border-color: var(--border); }
+.btn-ghost:hover { border-color: var(--border-h); background: var(--surf); }
+
+.btn-purple { background: var(--purple); color: white; border-color: var(--purple); }
+.btn-purple:hover { background: #5849E5; }
+
+.btn-success { background: var(--green); color: white; border-color: var(--green); }
+.btn-success:hover { filter: brightness(0.95); }
+
+.btn-danger { background: var(--red-50); color: var(--red); border-color: #FECACA; }
+.btn-danger:hover { background: #FEE2E2; }
+
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-sm svg { width: 12px; height: 12px; }
+
+/* ─── PANEL ────────────────────────────────────── */
+.panel {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.panel-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: white;
+}
+
+.panel-head-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.panel-head-icon svg { width: 16px; height: 16px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.panel-title { font: 600 15px 'Plus Jakarta Sans', sans-serif; }
+.panel-sub { font-size: 12px; color: var(--text-2); }
+
+.panel-body { padding: 18px; }
+
+/* ─── JOBS LIST ────────────────────────────────── */
+.jobs-toolbar {
+  display: flex; gap: 12px; align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar-search {
+  flex: 1; min-width: 200px;
+  position: relative;
+}
+
+.toolbar-search svg {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 14px; fill: none; stroke: var(--text-3); stroke-width: 2; stroke-linecap: round; pointer-events: none;
+}
+
+.toolbar-search input { padding-left: 36px; }
+
+.jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+}
+
+.job-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.job-card:hover {
+  border-color: var(--blue);
+  box-shadow: 0 4px 12px rgba(45, 108, 223, 0.08);
+  transform: translateY(-1px);
+}
+
+.job-card-top {
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-bottom: 12px;
+}
+
+.company-logo {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--blue-50), var(--purple-50));
+  color: var(--blue);
+  font: 700 16px 'Plus Jakarta Sans', sans-serif;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.jc-info { flex: 1; min-width: 0; }
+.jc-title { font: 600 14px 'Plus Jakarta Sans', sans-serif; margin-bottom: 2px; }
+.jc-company { font-size: 12px; color: var(--text-2); }
+
+.match-badge {
+  font: 600 12px 'JetBrains Mono', monospace;
+  padding: 4px 10px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.match-high { background: var(--green-50); color: #047857; }
+.match-mid { background: var(--orange-50); color: #B45309; }
+.match-low { background: var(--surf); color: var(--text-2); }
+
+.jc-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+
+.meta-chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--surf);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+
+.meta-chip svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+.jc-desc {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.6;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.jc-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ─── RESUME EDITOR ────────────────────────────── */
+.list-edit { display: flex; flex-direction: column; gap: 8px; }
+
+.list-item {
+  display: flex; gap: 8px; align-items: center;
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 4px 4px 10px;
+}
+
+.list-item input { background: transparent; border: none; flex: 1; padding: 6px 0; font-size: 13px; outline: none; }
+
+.list-item button {
+  background: transparent; border: none; cursor: pointer;
+  padding: 4px; border-radius: 4px;
+  color: var(--text-3);
+}
+
+.list-item button:hover { background: var(--red-50); color: var(--red); }
+.list-item button svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+.skill-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 10px 5px 12px;
+  background: var(--blue-50);
+  color: var(--blue);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.skill-tag button {
+  background: transparent; border: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: currentColor;
+  opacity: 0.6;
+}
+
+.skill-tag button:hover { opacity: 1; background: rgba(255,255,255,0.4); }
+.skill-tag button svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+
+.skills-input-wrap {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 8px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-height: 44px;
+  cursor: text;
+}
+
+.skills-input-wrap input {
+  border: none; outline: none; flex: 1; min-width: 100px;
+  padding: 4px; font-size: 13px; background: transparent;
+}
+
+.exp-card {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+/* ─── TABLE ────────────────────────────────────── */
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text-2); vertical-align: middle; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--surf); }
+
+.status-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.status-sent { background: var(--blue-50); color: var(--blue); }
+.status-replied { background: var(--purple-50); color: var(--purple); }
+.status-interview { background: var(--teal-50); color: var(--teal); }
+.status-offer { background: var(--green-50); color: var(--green); }
+.status-rejected { background: var(--red-50); color: var(--red); }
+.status-draft { background: var(--surf); color: var(--text-2); }
+.status-generic { background: var(--orange-50); color: var(--orange); }
+.status-other { background: var(--surf); color: var(--text-2); }
+
+/* ─── MODALS ───────────────────────────────────── */
+.modal-bg {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  z-index: 200;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 5vh 1rem;
+  overflow-y: auto;
+}
+
+.modal-bg.open { display: flex; }
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 720px;
+  width: 100%;
+  padding: 28px;
+  position: relative;
+  margin-bottom: 5vh;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2);
+}
+
+.modal-close {
+  position: absolute; top: 16px; right: 16px;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: var(--surf);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-2);
+}
+
+.modal-close:hover { background: var(--red-50); color: var(--red); }
+.modal-close svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+.modal-title {
+  font: 700 20px 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.3px;
+  margin-bottom: 4px;
+}
+
+.modal-subtitle { color: var(--text-2); font-size: 13px; margin-bottom: 24px; }
+
+/* ─── OUTPUT BOX ───────────────────────────────── */
+.output-box {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* ─── EMPTY STATE ──────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-3);
+}
+
+.empty-icon {
+  width: 64px; height: 64px;
+  border-radius: 16px;
+  background: var(--surf);
+  margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.empty-icon svg { width: 28px; height: 28px; fill: none; stroke: var(--text-3); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+.empty p { font-size: 14px; margin-bottom: 12px; }
+
+/* ─── ALERT ────────────────────────────────────── */
+.alert {
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  display: flex; align-items: flex-start; gap: 10px;
+  margin-bottom: 14px;
+}
+
+.alert svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.alert-info { background: var(--blue-50); color: #1E40AF; border: 1px solid var(--blue-100); }
+.alert-info svg { stroke: var(--blue); }
+.alert-warn { background: var(--orange-50); color: #92400E; border: 1px solid #FDE68A; }
+.alert-warn svg { stroke: var(--orange); }
+.alert-success { background: var(--green-50); color: #065F46; border: 1px solid #A7F3D0; }
+.alert-success svg { stroke: var(--green); }
+
+/* ─── LOG TERMINAL ─────────────────────────────── */
+.log-box {
+  background: #0F172A;
+  color: #94A3B8;
+  border-radius: 10px;
+  padding: 14px;
+  font: 12px 'JetBrains Mono', monospace;
+  max-height: 220px;
+  overflow-y: auto;
+  line-height: 1.7;
+}
+
+.log-row { display: flex; gap: 10px; }
+.log-ts { color: #475569; flex-shrink: 0; }
+.log-info { color: #5B8FE8; }
+.log-success { color: #34D399; }
+.log-warn { color: #FBBF24; }
+.log-error { color: #F87171; }
+
+/* ─── RESPONSIVE ───────────────────────────────── */
+@media (max-width: 1100px) {
+  .bento-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats-strip { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+}
+
+@media (max-width: 700px) {
+  .topnav { flex-wrap: wrap; padding: 12px 16px; }
+  .nav-tabs { margin-left: 0; width: 100%; order: 10; overflow-x: auto; padding-bottom: 4px; }
+  .nav-tab { font-size: 12px; padding: 6px 10px; }
+  .main { padding: 16px; }
+  .bento-grid { grid-template-columns: 1fr; }
+  .stats-strip { grid-template-columns: 1fr; }
+  .form-grid, .form-grid.cols-3 { grid-template-columns: 1fr; }
+  .jobs-grid { grid-template-columns: 1fr; }
+  .modal { padding: 20px; }
+}
+
+/* ─── MISC ────────────────────────────────────── */
+.divider { height: 1px; background: var(--border); margin: 18px 0; border: none; }
+
+/* ─── EXCEL TABLE (jobs view) ──────────────────── */
+.table-wrap {
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  overflow: auto;
+  max-height: 70vh;
+  background: white;
+}
+
+.excel-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 1100px;
+}
+
+.excel-tbl thead th {
+  background: #F1F4F9;
+  border-bottom: 2px solid var(--border-h);
+  border-right: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font: 700 11px 'Plus Jakarta Sans', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.excel-tbl thead th:last-child { border-right: none; }
+
+.excel-tbl thead th.sortable { cursor: pointer; user-select: none; }
+.excel-tbl thead th.sortable:hover { background: #E4E8F0; }
+
+.sort-ind { color: var(--blue); margin-left: 4px; font-size: 11px; }
+
+.excel-tbl tbody tr { transition: background 0.1s; }
+.excel-tbl tbody tr:nth-child(even) { background: #FAFBFD; }
+.excel-tbl tbody tr:hover { background: var(--blue-50); }
+.excel-tbl tbody tr.selected { background: #DBE6FB !important; }
+.excel-tbl tbody tr.selected:hover { background: #C9D9F8 !important; }
+
+.excel-tbl tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.excel-tbl tbody td:last-child { border-right: none; }
+
+.excel-tbl .col-check { width: 38px; text-align: center; }
+.excel-tbl .col-check input { cursor: pointer; width: 16px; height: 16px; accent-color: var(--blue); }
+.excel-tbl .col-actions { width: 130px; }
+
+.cell-title { font-weight: 600; color: var(--text); cursor: pointer; }
+.cell-title:hover { color: var(--blue); text-decoration: underline; }
+
+.cell-company { font-weight: 500; color: var(--text); }
+.cell-email a { color: var(--blue); text-decoration: none; font-size: 12px; }
+.cell-email a:hover { text-decoration: underline; }
+
+.cell-match {
+  font: 700 12px 'JetBrains Mono', monospace;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-align: center;
+  display: inline-block;
+  min-width: 44px;
+}
+
+.row-actions { display: flex; gap: 4px; }
+
+.row-btn {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: white;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-2);
+  transition: all 0.15s;
+}
+
+.row-btn:hover { background: var(--blue-50); color: var(--blue); border-color: var(--blue); }
+.row-btn.danger:hover { background: var(--red-50); color: var(--red); border-color: var(--red); }
+.row-btn svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--blue-50);
+  border: 1px solid var(--blue-100);
+  border-radius: 8px;
+  margin-left: auto;
+}
+
+.bulk-count { font-size: 12px; font-weight: 600; color: var(--blue); }
+
+.text-muted { color: var(--text-2); }
+.text-sm { font-size: 12px; }
+.fw-600 { font-weight: 600; }
+.flex { display: flex; }
+.flex-1 { flex: 1; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.center { text-align: center; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.8s linear infinite; }
+
+.loader {
+  width: 14px; height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.7s linear infinite;
+}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="topnav">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+    </div>
+    <div class="brand-name">Job<span>Hunter</span></div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-tab="dashboard" onclick="switchTab(this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-tab" data-tab="jobs" onclick="switchTab(this)">
+      <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      Jobs
+    </button>
+    <button class="nav-tab" data-tab="resume" onclick="switchTab(this)">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Resume
+    </button>
+    <button class="nav-tab" data-tab="email" onclick="switchTab(this)">
+      <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Email Inbox
+    </button>
+    <button class="nav-tab" data-tab="applications" onclick="switchTab(this)">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Applications
+    </button>
+  </div>
+
+  <div class="nav-right">
+    <div class="gmail-status" id="gmail-status" onclick="openModal('modal-gmail')">
+      <div class="dot"></div>
+      <span id="gmail-status-text">Gmail not connected</span>
+    </div>
+
+    <div class="user-menu-wrap" id="user-menu-wrap">
+      <div class="user-menu" onclick="toggleUserMenu()">
+        <div class="user-avatar" id="user-avatar">{{ user_name[0].upper() }}</div>
+        <div class="user-name">{{ user_name }}</div>
+      </div>
+      <div class="user-menu-dropdown">
+        <div class="menu-item" onclick="switchTabByName('resume')">
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          My Resume
+        </div>
+        <div class="menu-item" onclick="openModal('modal-gmail')">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Gmail Settings
+        </div>
+        <hr class="divider" style="margin: 4px 0;">
+        <a class="menu-item danger" href="/logout">
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Sign Out
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ═════════════════════════════════════════════════════════════════
+     DASHBOARD TAB (Bento)
+     ═════════════════════════════════════════════════════════════════ -->
+<div class="tab-pane active" id="pane-dashboard">
+  <div class="page-header">
+    <div>
+      <div class="page-title">One AI Engine.<br><span class="page-title-gradient">Smart Job Applications.</span></div>
+      <div class="page-subtitle">Find jobs, match your profile, write cover letters, send emails, track replies — all in one place.</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-ghost" onclick="openModal('modal-csv')">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import CSV
+      </button>
+      <button class="btn btn-primary" onclick="runAgent()">
+        <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Run AI Agent
+      </button>
+    </div>
+  </div>
+
+  <!-- BENTO GRID -->
+  <div class="bento-grid">
+
+    <!-- Card 1: Jobs Found -->
+    <div class="bento-card" onclick="switchTabByName('jobs')">
+      <div class="bento-header">
+        <div class="bento-icon ic-blue"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div>
+        <div class="bento-title-row">
+          <div class="bento-title">Job Search Engine</div>
+          <div class="bento-desc">AI-matched opportunities</div>
+        </div>
+      </div>
+      <div class="bento-stats">
+        <div class="bento-stat-block">
+          <div class="bento-stat-num" id="s-jobs">0</div>
+          <div class="bento-stat-lbl">Total Jobs</div>
+        </div>
+        <div class="bento-stat-block">
+          <div class="bento-stat-num" id="s-match" style="color: var(--blue);">0%</div>
+          <div class="bento-stat-lbl">Avg Match</div>
+        </div>
+      </div>
+      <svg class="spark" id="spark-jobs" viewBox="0 0 200 40" preserveAspectRatio="none"></svg>
+      <div class="bento-link">
+        View jobs
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- Card 2: Applications -->
+    <div class="bento-card" onclick="switchTabByName('applications')">
+      <div class="bento-header">
+        <div class="bento-icon ic-purple"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
+        <div class="bento-title-row">
+          <div class="bento-title">Applications Sent</div>
+          <div class="bento-desc">Tracked email submissions</div>
+        </div>
+      </div>
+      <div class="bento-stats">
+        <div class="bento-stat-block">
+          <div class="bento-stat-num" id="s-apps">0</div>
+          <div class="bento-stat-lbl">Sent</div>
+        </div>
+        <div class="bento-stat-block">
+          <div class="bento-stat-num" id="s-rate" style="color: var(--purple);">0%</div>
+          <div class="bento-stat-lbl">Response Rate</div>
+        </div>
+      </div>
+      <svg class="spark" id="spark-apps" viewBox="0 0 200 40" preserveAspectRatio="none"></svg>
+      <div class="bento-link">
+        View history
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- Card 3: Email Replies -->
+    <div class="bento-card" onclick="switchTabByName('email')">
+      <div class="bento-header">
+        <div class="bento-icon ic-teal"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+        <div class="bento-title-row">
+          <div class="bento-title">Email Replies</div>
+          <div class="bento-desc">AI-classified inbox</div>
+        </div>
+      </div>
+      <div class="bento-stats">
+        <div class="bento-stat-block">
+          <div class="bento-stat-num" id="s-replies">0</div>
+          <div class="bento-stat-lbl">Total Replies</div>
+        </div>
+        <div class="bento-stat-block">
+          <div class="bento-stat-num" id="s-interviews" style="color: var(--teal);">0</div>
+          <div class="bento-stat-lbl">Interviews</div>
+        </div>
+      </div>
+      <svg class="spark" id="spark-replies" viewBox="0 0 200 40" preserveAspectRatio="none"></svg>
+      <div class="bento-link">
+        Scan inbox
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- Card 4: Cover Letters -->
+    <div class="bento-card">
+      <div class="bento-header">
+        <div class="bento-icon ic-orange"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg></div>
+        <div class="bento-title-row">
+          <div class="bento-title">Cover Letters</div>
+          <div class="bento-desc">AI-generated, JD-matched</div>
+        </div>
+      </div>
+      <div class="bento-stats">
+        <div class="bento-stat-block">
+          <div class="bento-stat-num" id="s-cl">0</div>
+          <div class="bento-stat-lbl">Written</div>
+        </div>
+        <div class="bento-stat-block">
+          <div class="bento-stat-num" id="s-cl-avg" style="color: var(--orange);">—</div>
+          <div class="bento-stat-lbl">Avg Words</div>
+        </div>
+      </div>
+      <svg class="spark" id="spark-cl" viewBox="0 0 200 40" preserveAspectRatio="none"></svg>
+      <div class="bento-link" onclick="event.stopPropagation();switchTabByName('jobs')">
+        Generate new
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- Card 5: Pipeline Status -->
+    <div class="bento-card">
+      <div class="bento-header">
+        <div class="bento-icon ic-pink"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="bento-title-row">
+          <div class="bento-title">Outcomes</div>
+          <div class="bento-desc">Reject / interview / offer</div>
+        </div>
+      </div>
+      <div class="bento-stats">
+        <div class="bento-stat-block">
+          <div class="bento-stat-num" id="s-offers" style="color: var(--green);">0</div>
+          <div class="bento-stat-lbl">Offers</div>
+        </div>
+        <div class="bento-stat-block">
+          <div class="bento-stat-num" id="s-rejected" style="color: var(--red);">0</div>
+          <div class="bento-stat-lbl">Rejected</div>
+        </div>
+      </div>
+      <svg class="spark" id="spark-outcomes" viewBox="0 0 200 40" preserveAspectRatio="none"></svg>
+      <div class="bento-link">
+        See details
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- Featured AI Card -->
+    <div class="bento-card featured">
+      <div class="featured-content">
+        <div class="featured-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 0v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="4"/></svg>
+        </div>
+        <div class="featured-title">AI Engine Powering<br>Your Job Search</div>
+        <div class="featured-sub">Unified · Intelligent · Automated</div>
+        <button class="featured-btn" onclick="runAgent()">
+          Run Agent Now
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM STATS STRIP -->
+  <div class="stats-strip">
+    <div class="stat-block">
+      <div class="stat-block-icon ic-blue"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+      <div class="stat-block-info">
+        <div class="stat-block-num" id="ss-jobs">0</div>
+        <div class="stat-block-lbl">Jobs in pipeline</div>
+        <div class="stat-block-sub"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 1 18"/><polyline points="16 7 22 7 22 13"/></svg>Across all sites</div>
+      </div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-block-icon ic-purple"><svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg></div>
+      <div class="stat-block-info">
+        <div class="stat-block-num" id="ss-companies">0</div>
+        <div class="stat-block-lbl">Companies reached</div>
+        <div class="stat-block-sub"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 1 18"/><polyline points="16 7 22 7 22 13"/></svg>Unique employers</div>
+      </div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-block-icon ic-teal"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="stat-block-info">
+        <div class="stat-block-num" id="ss-interview">0</div>
+        <div class="stat-block-lbl">Interview chances</div>
+        <div class="stat-block-sub"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 1 18"/><polyline points="16 7 22 7 22 13"/></svg>Active conversations</div>
+      </div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-block-icon ic-green"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg></div>
+      <div class="stat-block-info">
+        <div class="stat-block-num" id="ss-success">0%</div>
+        <div class="stat-block-lbl">Success rate</div>
+        <div class="stat-block-sub"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 1 18"/><polyline points="16 7 22 7 22 13"/></svg>Replies / sent</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGENT LOG -->
+  <div class="panel mt-16">
+    <div class="panel-head">
+      <div class="panel-head-icon ic-blue"><svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
+      <div>
+        <div class="panel-title">Agent Activity Log</div>
+        <div class="panel-sub">Live actions and AI operations</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-left: auto;" onclick="document.getElementById('log').innerHTML=''">Clear</button>
+    </div>
+    <div class="panel-body">
+      <div class="log-box" id="log">
+        <div class="log-row"><span class="log-ts">[ready]</span><span class="log-info">Welcome back, {{ user_name }}. Click "Run AI Agent" to start your job search.</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════
+     JOBS TAB
+     ═════════════════════════════════════════════════════════════════ -->
+<div class="tab-pane" id="pane-jobs">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Job Listings</div>
+      <div class="page-subtitle">Excel-style view. Click headers to sort. Tick rows for bulk actions.</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-ghost" onclick="dedupAllJobs()">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Remove Duplicates
+      </button>
+      <button class="btn btn-ghost" onclick="openModal('modal-csv')">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import CSV
+      </button>
+      <button class="btn btn-primary" onclick="runAgent()">
+        <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Run Agent
+      </button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-body">
+      <div class="jobs-toolbar">
+        <div class="toolbar-search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="ctrl" id="job-filter" placeholder="Search jobs by title, company, location..." oninput="renderJobs()">
+        </div>
+        <span class="text-sm text-muted" id="job-count">0 jobs</span>
+        <div class="bulk-actions" id="bulk-actions" style="display:none;">
+          <span class="bulk-count" id="bulk-count">0 selected</span>
+          <button class="btn btn-danger btn-sm" onclick="bulkDeleteSelected()">
+            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            Delete Selected
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="clearSelection()">Clear</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="excel-tbl" id="jobs-table">
+          <thead>
+            <tr>
+              <th class="col-check"><input type="checkbox" id="check-all" onchange="toggleAll(this.checked)"></th>
+              <th class="sortable" onclick="setSort('match_score')">Match <span class="sort-ind" id="sort-match_score"></span></th>
+              <th class="sortable" onclick="setSort('title')">Job Title <span class="sort-ind" id="sort-title"></span></th>
+              <th class="sortable" onclick="setSort('company')">Company <span class="sort-ind" id="sort-company"></span></th>
+              <th class="sortable" onclick="setSort('location')">Location <span class="sort-ind" id="sort-location"></span></th>
+              <th class="sortable" onclick="setSort('job_type')">Type <span class="sort-ind" id="sort-job_type"></span></th>
+              <th class="sortable" onclick="setSort('salary')">Salary <span class="sort-ind" id="sort-salary"></span></th>
+              <th>Email</th>
+              <th class="sortable" onclick="setSort('site')">Source <span class="sort-ind" id="sort-site"></span></th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="jobs-list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════
+     RESUME TAB
+     ═════════════════════════════════════════════════════════════════ -->
+<div class="tab-pane" id="pane-resume">
+  <div class="page-header">
+    <div>
+      <div class="page-title">My Resume</div>
+      <div class="page-subtitle">Edit your profile. The AI uses this for matching and cover letters.</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary" onclick="saveResume()">
+        <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save Profile
+      </button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-head-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div>
+        <div class="panel-title">Personal Information</div>
+        <div class="panel-sub">Contact details and basic info</div>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="form-grid">
+        <div class="field"><label>Full Name</label><input class="ctrl" id="r-name"></div>
+        <div class="field"><label>Job Title</label><input class="ctrl" id="r-title" placeholder="e.g. Senior Digital Marketing Executive"></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Location</label><input class="ctrl" id="r-location" placeholder="City, Country"></div>
+        <div class="field"><label>Phone</label><input class="ctrl" id="r-phone"></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Portfolio URL</label><input class="ctrl" id="r-portfolio"></div>
+        <div class="field"><label>LinkedIn URL</label><input class="ctrl" id="r-linkedin"></div>
+      </div>
+      <div class="field"><label>Professional Summary</label>
+        <textarea class="ctrl" id="r-summary" rows="3" placeholder="2-3 sentence summary of your experience..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-head-icon ic-purple"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+      <div>
+        <div class="panel-title">Skills</div>
+        <div class="panel-sub">Type and press Enter to add</div>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="skills-input-wrap" id="skills-wrap" onclick="document.getElementById('skill-input').focus()">
+        <input id="skill-input" placeholder="Type a skill and press Enter..." onkeydown="if(event.key==='Enter'){event.preventDefault();addSkill();}">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-head-icon ic-teal"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div>
+      <div>
+        <div class="panel-title">Work Experience</div>
+        <div class="panel-sub">Most recent first</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-left: auto;" onclick="addExperience()">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Job
+      </button>
+    </div>
+    <div class="panel-body">
+      <div id="exp-list"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-head-icon ic-orange"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 4 3 6 3s6-1 6-3v-5"/></svg></div>
+      <div>
+        <div class="panel-title">Education</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-left: auto;" onclick="addEducation()">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add
+      </button>
+    </div>
+    <div class="panel-body">
+      <div id="edu-list" class="list-edit"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-head-icon ic-pink"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></div>
+      <div>
+        <div class="panel-title">Certifications</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-left: auto;" onclick="addCert()">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add
+      </button>
+    </div>
+    <div class="panel-body">
+      <div id="cert-list" class="list-edit"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-head-icon ic-green"><svg viewBox="0 0 24 24"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg></div>
+      <div>
+        <div class="panel-title">Languages</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-left: auto;" onclick="addLang()">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add
+      </button>
+    </div>
+    <div class="panel-body">
+      <div id="lang-list" class="list-edit"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-head-icon ic-blue"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div>
+        <div class="panel-title">Key Achievements</div>
+        <div class="panel-sub">Bullet points with metrics</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-left: auto;" onclick="addAchievement()">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add
+      </button>
+    </div>
+    <div class="panel-body">
+      <div id="ach-list" class="list-edit"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════
+     EMAIL INBOX TAB
+     ═════════════════════════════════════════════════════════════════ -->
+<div class="tab-pane" id="pane-email">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Email Inbox</div>
+      <div class="page-subtitle">AI-classified replies from companies you've applied to</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-purple" onclick="scanInbox()">
+        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        <span id="scan-btn-text">Scan Inbox</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-head-icon ic-teal"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+      <div>
+        <div class="panel-title">Classified Replies</div>
+        <div class="panel-sub">AI reads emails and labels them as Interview, Rejection, Offer, or Generic</div>
+      </div>
+    </div>
+    <div class="panel-body" style="padding: 0;">
+      <table class="tbl">
+        <thead><tr><th>From</th><th>Subject</th><th>Classification</th><th>AI Summary</th><th>Date</th></tr></thead>
+        <tbody id="replies-body">
+          <tr><td colspan="5" class="center text-muted" style="padding: 32px;">No emails scanned yet. Connect Gmail and click "Scan Inbox".</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════
+     APPLICATIONS TAB
+     ═════════════════════════════════════════════════════════════════ -->
+<div class="tab-pane" id="pane-applications">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Sent Applications</div>
+      <div class="page-subtitle">Every email you've sent through the agent</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-ghost" onclick="exportCSV()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-body" style="padding: 0;">
+      <table class="tbl">
+        <thead><tr><th>Company</th><th>Role</th><th>To</th><th>Status</th><th>Reply Summary</th><th>Sent</th></tr></thead>
+        <tbody id="apps-body">
+          <tr><td colspan="6" class="center text-muted" style="padding: 32px;">No applications yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ═════════════════════════════════════════════════════════════════
+     MODALS
+     ═════════════════════════════════════════════════════════════════ -->
+
+<!-- Job Detail Modal -->
+<div class="modal-bg" id="modal-job" onclick="if(event.target===this)closeModal('modal-job')">
+  <div class="modal" id="modal-job-content"></div>
+</div>
+
+<!-- Compose Email Modal -->
+<div class="modal-bg" id="modal-compose" onclick="if(event.target===this)closeModal('modal-compose')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-compose')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-title">Send Application Email</div>
+    <div class="modal-subtitle">Your cover letter will be sent via your connected Gmail.</div>
+
+    <div id="compose-alert"></div>
+
+    <div class="form-grid">
+      <div class="field"><label>To Email</label><input class="ctrl" id="c-to" placeholder="hr@company.com"></div>
+      <div class="field"><label>Company</label><input class="ctrl" id="c-company"></div>
+    </div>
+    <div class="form-grid">
+      <div class="field"><label>Role</label><input class="ctrl" id="c-role"></div>
+      <div class="field"><label>Subject</label><input class="ctrl" id="c-subject"></div>
+    </div>
+    <div class="field"><label>Email Body</label><textarea class="ctrl" id="c-body" rows="14" style="min-height: 280px;"></textarea></div>
+    <input type="hidden" id="c-jobid">
+
+    <div class="flex gap-8 mt-12">
+      <button class="btn btn-ghost" onclick="aiRewriteEmail()">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        AI Rewrite
+      </button>
+      <button class="btn btn-primary" style="margin-left:auto" onclick="sendComposedEmail()">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Send Email
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Gmail Connect Modal -->
+<div class="modal-bg" id="modal-gmail" onclick="if(event.target===this)closeModal('modal-gmail')">
+  <div class="modal" style="max-width:540px">
+    <button class="modal-close" onclick="closeModal('modal-gmail')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-title">Connect Gmail</div>
+    <div class="modal-subtitle">JobHunter uses your Gmail App Password to send and read emails.</div>
+
+    <div class="alert alert-info">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <div>
+        <strong>How to get an App Password:</strong><br>
+        1. Enable 2-Step Verification: <a href="https://myaccount.google.com/security" target="_blank" style="color:var(--blue);">myaccount.google.com/security</a><br>
+        2. Then create an App Password: <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:var(--blue);">myaccount.google.com/apppasswords</a><br>
+        3. Copy the 16-character password and paste below.
+      </div>
+    </div>
+
+    <div id="gmail-alert"></div>
+
+    <div class="field"><label>Your Gmail Address</label><input class="ctrl" id="g-email" placeholder="you@gmail.com" type="email"></div>
+    <div class="field"><label>App Password (16 characters)</label><input class="ctrl" id="g-pw" placeholder="xxxx xxxx xxxx xxxx" type="password"></div>
+
+    <div class="flex gap-8 mt-12">
+      <button class="btn btn-danger" onclick="disconnectGmail()" id="g-disconnect" style="display:none;">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        Disconnect
+      </button>
+      <button class="btn btn-primary" style="margin-left: auto;" onclick="saveGmail()" id="g-save-btn">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Connect Gmail
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CSV Import Modal -->
+<div class="modal-bg" id="modal-csv" onclick="if(event.target===this)closeModal('modal-csv')">
+  <div class="modal" style="max-width:540px">
+    <button class="modal-close" onclick="closeModal('modal-csv')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-title">Import Jobs from CSV</div>
+    <div class="modal-subtitle">Bulk-upload job listings. Each row becomes a job in your pipeline.</div>
+
+    <div class="alert alert-info">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <div>
+        Required columns: <code style="background:white;padding:1px 6px;border-radius:4px;">title, company, location, hiring_email</code><br>
+        Optional: type, site, url, salary, match_score, description, requirements (separate with semicolons)
+      </div>
+    </div>
+
+    <div id="csv-alert"></div>
+
+    <div class="field">
+      <label>CSV File</label>
+      <input type="file" class="ctrl" id="csv-file" accept=".csv">
+    </div>
+
+    <div class="flex gap-8 mt-12">
+      <a class="btn btn-ghost" href="/api/jobs/csv-template" download>
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download Template
+      </a>
+      <button class="btn btn-primary" style="margin-left: auto;" onclick="uploadCSV()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Upload & Import
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Agent Settings Modal -->
+<div class="modal-bg" id="modal-agent" onclick="if(event.target===this)closeModal('modal-agent')">
+  <div class="modal" style="max-width:560px">
+    <button class="modal-close" onclick="closeModal('modal-agent')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-title">AI Agent Settings</div>
+    <div class="modal-subtitle">Tell the agent what to search for.</div>
+
+    <div class="field"><label>Job Title Keywords</label>
+      <input class="ctrl" id="a-keywords" value="Digital Marketing Manager, SEO Specialist, Performance Marketing">
+    </div>
+    <div class="form-grid">
+      <div class="field"><label>Location</label>
+        <select class="ctrl" id="a-location">
+          <option>Germany (Remote)</option>
+          <option>Berlin, Germany</option>
+          <option>Europe (Remote)</option>
+          <option>UK (Remote)</option>
+          <option>Global Remote</option>
+        </select>
+      </div>
+      <div class="field"><label>Number of Jobs</label>
+        <select class="ctrl" id="a-count">
+          <option value="6">6 jobs</option>
+          <option value="10">10 jobs</option>
+          <option value="15">15 jobs</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="alert alert-warn">
+      <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <div>The agent simulates job discovery using AI. For real-time scraping, you'd need API integrations with each job board.</div>
+    </div>
+
+    <button class="btn btn-primary" style="width: 100%;" onclick="startAgent()">
+      <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Start Agent
+    </button>
+  </div>
+</div>
+
+<script src="/static/app.js" defer></script>
+<script>
+// Inline minimal bootstrap since /static won't load without static folder
+{% include 'app.js.html' %}
+</script>
+</body>
+</html>
